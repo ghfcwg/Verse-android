@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Verse</string>
+    <string name="title_item_detail">Item Detail</string>
+    <string name="search_hint">Search...</string>
+</resources>
