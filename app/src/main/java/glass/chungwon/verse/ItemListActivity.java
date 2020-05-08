@@ -101,7 +101,8 @@ public class ItemListActivity extends AppCompatActivity {
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
+                // TODO: Not implemented, will open new Chrome page with the url of the verse, currently invisible in the UI
+                Snackbar.make(view, "Going to verse URL", Snackbar.LENGTH_LONG)
                         .setAction("Action", null).show();
             }
         });
