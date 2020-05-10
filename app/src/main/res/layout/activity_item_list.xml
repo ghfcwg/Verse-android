@@ -20,19 +20,32 @@
 
             <androidx.appcompat.widget.Toolbar
                 android:id="@+id/toolbar"
-                android:layout_width="0dp"
-                android:layout_height="?attr/actionBarSize"
-                android:layout_weight=".21"
-                app:popupTheme="@style/AppTheme.PopupOverlay" />
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:popupTheme="@style/AppTheme.PopupOverlay">
 
-            <SearchView
-                android:id="@+id/toolbarSearch"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight=".79"
-                android:iconifiedByDefault="false">
+                <androidx.appcompat.widget.AppCompatEditText
+                    android:id="@+id/search_text"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:layout_centerHorizontal="true"
+                    android:layout_weight="1"
+                    android:ems="15"
+                    android:hint="@string/search_hint"
+                    android:importantForAutofill="no"
+                    android:inputType="text" />
 
-            </SearchView>
+                <androidx.appcompat.widget.AppCompatImageButton
+                    android:id="@+id/submit_query_button"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:background="#80FFFFFF"
+                    android:backgroundTint="#FFFFFF"
+                    android:contentDescription="@string/search_hint"
+                    app:srcCompat="@drawable/ic_search_black_18dp" />
+            </androidx.appcompat.widget.Toolbar>
+
 
         </LinearLayout>
 

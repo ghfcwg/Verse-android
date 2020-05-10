@@ -7,7 +7,9 @@ import android.os.Bundle;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-//import androidx.appcompat.widget.SearchView;
+import androidx.appcompat.widget.AppCompatEditText;
+import androidx.appcompat.widget.AppCompatImageButton;
+import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.appcompat.widget.Toolbar;
 
@@ -15,11 +17,13 @@ import com.android.volley.toolbox.JsonArrayRequest;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
 
+import android.os.Parcelable;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.SearchView;
+import android.view.inputmethod.EditorInfo;
 import android.widget.TextView;
 
 import com.android.volley.Request;
@@ -57,9 +61,9 @@ public class ItemListActivity extends AppCompatActivity {
     private boolean mTwoPane;
 
     /**
-     * An array of verse items.
+     * An array of verse items. It's set to static as it is needed to restore session.
      */
-    public ArrayList<VerseItem> ITEMS = new ArrayList<VerseItem>();
+    public static ArrayList<VerseItem> ITEMS = new ArrayList<VerseItem>();
 
     /**
      * A logging tag for Logcat.
@@ -71,6 +75,17 @@ public class ItemListActivity extends AppCompatActivity {
      */
     public static Map<String, VerseItem> ITEM_MAP = new HashMap<String, VerseItem>();
 
+    private SimpleItemRecyclerViewAdapter recyclerViewAdapter;
+    private RecyclerView recyclerView;
+    private AppCompatImageButton querySubmitButton;
+    private AppCompatEditText editText;
+    LinearLayoutManager mLayoutManager;
+    public static int index = -1;
+    public static int top = -1;
+    private static String queryString;
+
+    Parcelable state;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -80,22 +95,40 @@ public class ItemListActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
         toolbar.setTitle(getTitle());
 
-        // Get the SearchView and set the searchable configuration
-        SearchManager searchManager = (SearchManager) getSystemService(Context.SEARCH_SERVICE);
-        SearchView searchView = (SearchView) findViewById(R.id.toolbarSearch);
-        // Assumes current activity is the searchable activity
-        searchView.setSearchableInfo(searchManager.getSearchableInfo(getComponentName()));
-        //searchView.setIconifiedByDefault(false); // Do not iconify the widget; expand it by default
-        searchView.setSubmitButtonEnabled(true);
+        editText = (AppCompatEditText) findViewById(R.id.search_text);
+        querySubmitButton = (AppCompatImageButton) findViewById(R.id.submit_query_button);
+        recyclerView = findViewById(R.id.item_list);
+        assert recyclerView != null;
+        mLayoutManager = (LinearLayoutManager) recyclerView.getLayoutManager();
 
-        // Get the class's intent, verify the search action and get the query
-        Intent intent = getIntent();
-        if (Intent.ACTION_SEARCH.equals(intent.getAction())) {
-            String query = intent.getStringExtra(SearchManager.QUERY);
-            Log.d(TAG, "received search param: " + query);
-            String searchText = StringEscapeUtils.escapeHtml4(query);
-            searchForVerse(searchText);
+        // Check whether we're recreating a previously destroyed instance
+        if (savedInstanceState != null) {
+            Log.d(TAG,"recreating a previously destroyed instance");
+            // Restore value of members from saved state
+            editText.setText(savedInstanceState.getString("queryString"));
+            performSearch();
+            mLayoutManager.onRestoreInstanceState(state);
+        } else {
+            // Probably initialize members with default values for a new instance
         }
+
+        editText.setImeActionLabel("Search", KeyEvent.KEYCODE_ENTER);
+        editText.setOnEditorActionListener((v, actionId, event) -> {
+            if (actionId == EditorInfo.IME_ACTION_SEND ||
+                    (event.getKeyCode() == KeyEvent.KEYCODE_ENTER && event.getAction() == KeyEvent.ACTION_DOWN)) {
+                performSearch();
+                editText.clearFocus();
+                return true;
+            }
+            return false;
+        });
+
+        querySubmitButton.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                performSearch();
+                editText.clearFocus();
+            }
+        });
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
@@ -114,12 +147,77 @@ public class ItemListActivity extends AppCompatActivity {
             // activity should be in two-pane mode.
             mTwoPane = true;
         }
-/*
-        // Initialize url for GET call
-        String query = "Pacific Rim era"; //"Pacific%20Rim%20Era";
+        //searchForVerse(searchText);
+
+        recyclerViewAdapter = new SimpleItemRecyclerViewAdapter(this, ITEMS, mTwoPane);
+        // set up recycler view
+        setupRecyclerView((RecyclerView) recyclerView);
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle savedInstanceState) {
+        // Save the user's query
+        editText = (AppCompatEditText) findViewById(R.id.search_text);
+        recyclerView = findViewById(R.id.item_list);
+
+        String query = editText.getText().toString();
+        Log.d(TAG,"Saved queryString: " + query);
+        savedInstanceState.putString("queryString", query);
+
+        // Always call the superclass so it can save the view hierarchy state
+        super.onSaveInstanceState(savedInstanceState);
+    }
+    @Override
+    public void onPause() {
+        super.onPause();
+
+        state = recyclerView.getLayoutManager().onSaveInstanceState();
+        //read current recyclerview position
+        index = mLayoutManager.findFirstVisibleItemPosition();
+        View v = recyclerView.getChildAt(0);
+        top = (v == null) ? 0 : (v.getTop() - recyclerView.getPaddingTop());
+
+        editText = (AppCompatEditText) findViewById(R.id.search_text);
+        queryString = editText.getText().toString();
+    }
+    @Override
+    public void onResume() {
+        super.onResume();
+
+        mLayoutManager.onRestoreInstanceState(state);
+        //set recyclerview position
+        if(index != -1)
+        {
+            mLayoutManager.scrollToPositionWithOffset( index, top);
+        }
+        if(queryString != "") {
+            editText = (AppCompatEditText) findViewById(R.id.search_text);
+            editText.setText(queryString);
+        }
+    }
+    @Override
+    public void onRestoreInstanceState(Bundle savedInstanceState) {
+        // Always call the superclass so it can restore the view hierarchy
+        super.onRestoreInstanceState(savedInstanceState);
+        Log.d(TAG,"restoring saved instance");
+
+        editText = (AppCompatEditText) findViewById(R.id.search_text);
+        recyclerView = findViewById(R.id.item_list);
+
+        // Restore value of members from saved state
+        editText.setText(savedInstanceState.getString("queryString"));
+        performSearch();
+        ((LinearLayoutManager) recyclerView.getLayoutManager()).scrollToPositionWithOffset(savedInstanceState.getInt("lastFirstVisiblePosition"),0);
+        savedInstanceState.putInt("lastFirstVisiblePosition", 0);
+    }
+
+    private void performSearch() {
+        editText = (AppCompatEditText) findViewById(R.id.search_text);
+        String query = editText.getText().toString();
+        Log.d(TAG, "received search param: " + query);
         String searchText = StringEscapeUtils.escapeHtml4(query);
-        //Log.d(TAG, searchText);
-        searchForVerse(searchText);*/
+        searchForVerse(searchText);
+        editText.clearFocus();
     }
 
     private void searchForVerse(String query) {
@@ -139,12 +237,8 @@ public class ItemListActivity extends AppCompatActivity {
                         for(VerseItem verse : ITEMS) {
                             ITEM_MAP.put(verse.id, verse);
                         }
+                        recyclerViewAdapter.swap(ITEMS);
 
-
-                        // set up recycler view
-                        View recyclerView = findViewById(R.id.item_list);
-                        assert recyclerView != null;
-                        setupRecyclerView((RecyclerView) recyclerView);
                     }
                 },
                 new Response.ErrorListener()
@@ -162,14 +256,14 @@ public class ItemListActivity extends AppCompatActivity {
     }
 
     private void setupRecyclerView(@NonNull RecyclerView recyclerView) {
-        recyclerView.setAdapter(new SimpleItemRecyclerViewAdapter(this, ITEMS, mTwoPane));
+        recyclerView.setAdapter(recyclerViewAdapter);
     }
 
     public static class SimpleItemRecyclerViewAdapter
             extends RecyclerView.Adapter<SimpleItemRecyclerViewAdapter.ViewHolder> {
 
         private final ItemListActivity mParentActivity;
-        private final List<VerseItem> mValues;
+        private List<VerseItem> mValues;
         private final boolean mTwoPane;
         private final View.OnClickListener mOnClickListener = new View.OnClickListener() {
             @Override
@@ -192,6 +286,17 @@ public class ItemListActivity extends AppCompatActivity {
                 }
             }
         };
+
+        public void swap(List<VerseItem> list){
+            if (mValues != null) {
+                mValues.clear();
+                mValues.addAll(list);
+            }
+            else {
+                mValues = list;
+            }
+            notifyDataSetChanged();
+        }
 
         SimpleItemRecyclerViewAdapter(ItemListActivity parent,
                                       List<VerseItem> items,
