@@ -114,10 +114,9 @@ public class ItemListActivity extends AppCompatActivity {
 
         editText.setImeActionLabel("Search", KeyEvent.KEYCODE_ENTER);
         editText.setOnEditorActionListener((v, actionId, event) -> {
-            if (actionId == EditorInfo.IME_ACTION_SEND ||
-                    (event.getKeyCode() == KeyEvent.KEYCODE_ENTER && event.getAction() == KeyEvent.ACTION_DOWN)) {
+            if (event!=null && (actionId == EditorInfo.IME_ACTION_SEND ||
+                    (event.getKeyCode() == KeyEvent.KEYCODE_ENTER && event.getAction() == KeyEvent.ACTION_DOWN))) {
                 performSearch();
-                editText.clearFocus();
                 return true;
             }
             return false;
@@ -126,7 +125,6 @@ public class ItemListActivity extends AppCompatActivity {
         querySubmitButton.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 performSearch();
-                editText.clearFocus();
             }
         });
 
