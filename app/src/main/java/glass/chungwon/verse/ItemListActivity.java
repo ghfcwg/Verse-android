@@ -87,6 +87,7 @@ public class ItemListActivity extends AppCompatActivity {
 
     Parcelable state;
 
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -118,16 +119,22 @@ public class ItemListActivity extends AppCompatActivity {
             if (event!=null && (actionId == EditorInfo.IME_ACTION_SEND ||
                     (event.getKeyCode() == KeyEvent.KEYCODE_ENTER && event.getAction() == KeyEvent.ACTION_DOWN))) {
                 performSearch();
-                hideSoftKeyBoard();
+
+                InputMethodManager imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+
+                if(imm.isAcceptingText() && getCurrentFocus() != null) { // verify if the soft keyboard is open
+                    imm.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(), 0);
+                }
                 return true;
             }
             return false;
         });
 
-        querySubmitButton.setOnClickListener(new View.OnClickListener() {
+        querySubmitButton.setOnClickListener(new AppCompatImageButton.OnClickListener() {
             public void onClick(View v) {
                 performSearch();
-                hideSoftKeyBoard();
+                InputMethodManager imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+                imm.hideSoftInputFromWindow(querySubmitButton.getWindowToken(), InputMethodManager.HIDE_NOT_ALWAYS);
             }
         });
 
@@ -337,14 +344,6 @@ public class ItemListActivity extends AppCompatActivity {
                 mIdView = (TextView) view.findViewById(R.id.id_text);
                 mContentView = (TextView) view.findViewById(R.id.content);
             }
-        }
-    }
-
-    private void hideSoftKeyBoard() {
-        InputMethodManager imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
-
-        if(imm.isAcceptingText()) { // verify if the soft keyboard is open
-            imm.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(), 0);
         }
     }
 
