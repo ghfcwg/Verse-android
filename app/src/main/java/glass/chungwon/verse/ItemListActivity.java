@@ -24,6 +24,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.TextView;
 
 import com.android.volley.Request;
@@ -117,6 +118,7 @@ public class ItemListActivity extends AppCompatActivity {
             if (event!=null && (actionId == EditorInfo.IME_ACTION_SEND ||
                     (event.getKeyCode() == KeyEvent.KEYCODE_ENTER && event.getAction() == KeyEvent.ACTION_DOWN))) {
                 performSearch();
+                hideSoftKeyBoard();
                 return true;
             }
             return false;
@@ -125,6 +127,7 @@ public class ItemListActivity extends AppCompatActivity {
         querySubmitButton.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 performSearch();
+                hideSoftKeyBoard();
             }
         });
 
@@ -334,6 +337,14 @@ public class ItemListActivity extends AppCompatActivity {
                 mIdView = (TextView) view.findViewById(R.id.id_text);
                 mContentView = (TextView) view.findViewById(R.id.content);
             }
+        }
+    }
+
+    private void hideSoftKeyBoard() {
+        InputMethodManager imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+
+        if(imm.isAcceptingText()) { // verify if the soft keyboard is open
+            imm.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(), 0);
         }
     }
 
