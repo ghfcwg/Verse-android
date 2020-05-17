@@ -1,6 +1,5 @@
 package glass.chungwon.verse;
 
-import android.app.SearchManager;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
@@ -25,6 +24,9 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
+import android.text.Html;
+import android.text.Spanned;
+import android.text.method.LinkMovementMethod;
 import android.widget.TextView;
 
 import com.android.volley.Request;
@@ -32,18 +34,20 @@ import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.Volley;
+
+import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Type;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
 import org.json.JSONArray;
 
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.text.StringEscapeUtils;
 
 /**
  * An activity representing a list of Items. This activity
@@ -86,7 +90,7 @@ public class ItemListActivity extends AppCompatActivity {
     private static String queryString;
 
     Parcelable state;
-
+    TextView hyperLink;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -97,6 +101,7 @@ public class ItemListActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
         toolbar.setTitle(getTitle());
 
+        hyperLink = (TextView)findViewById(R.id.privacyLinkView);
         editText = (AppCompatEditText) findViewById(R.id.search_text);
         querySubmitButton = (AppCompatImageButton) findViewById(R.id.submit_query_button);
         recyclerView = findViewById(R.id.item_list);
@@ -138,6 +143,7 @@ public class ItemListActivity extends AppCompatActivity {
             }
         });
 
+
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -160,6 +166,13 @@ public class ItemListActivity extends AppCompatActivity {
         recyclerViewAdapter = new SimpleItemRecyclerViewAdapter(this, ITEMS, mTwoPane);
         // set up recycler view
         setupRecyclerView((RecyclerView) recyclerView);
+    }
+
+    public void onPrivacyPolicyClick(View v) {
+
+        Intent intent = new Intent(getApplicationContext(),
+                PrivacyPolicyActivity.class);
+        startActivity(intent);
     }
 
     @Override
@@ -223,9 +236,14 @@ public class ItemListActivity extends AppCompatActivity {
         editText = (AppCompatEditText) findViewById(R.id.search_text);
         String query = editText.getText().toString();
         Log.d(TAG, "received search param: " + query);
-        String searchText = StringEscapeUtils.escapeHtml4(query);
-        searchForVerse(searchText);
-        editText.clearFocus();
+        String searchText;
+        try {
+            searchText = URLEncoder.encode(query, "utf-8");
+            searchForVerse(searchText);
+            editText.clearFocus();
+        } catch (UnsupportedEncodingException ex) {
+            Log.e(TAG, "utf-8 encoding is unsupported");
+        }
     }
 
     private void searchForVerse(String query) {
