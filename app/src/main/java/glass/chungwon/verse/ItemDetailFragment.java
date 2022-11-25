@@ -46,17 +46,20 @@ public class ItemDetailFragment extends Fragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        if (getArguments().containsKey(ARG_ITEM_ID)) {
-            // Load the dummy content specified by the fragment
-            // arguments. In a real-world scenario, use a Loader
-            // to load content from a content provider.
-            mItem = ITEM_MAP.get(getArguments().getString(ARG_ITEM_ID));
+        assert getArguments() != null;
+        if (!getArguments().containsKey(ARG_ITEM_ID)) {
+            return;
+        }
+        // Load the dummy content specified by the fragment
+        // arguments. In a real-world scenario, use a Loader
+        // to load content from a content provider.
+        mItem = ITEM_MAP.get(getArguments().getString(ARG_ITEM_ID));
 
-            Activity activity = this.getActivity();
-            CollapsingToolbarLayout appBarLayout = (CollapsingToolbarLayout) activity.findViewById(R.id.toolbar_layout);
-            if (appBarLayout != null) {
-                appBarLayout.setTitle(mItem.content);
-            }
+        Activity activity = this.getActivity();
+        assert activity != null;
+        CollapsingToolbarLayout appBarLayout = (CollapsingToolbarLayout) activity.findViewById(R.id.toolbar_layout);
+        if (appBarLayout != null) {
+            appBarLayout.setTitle(mItem.content);
         }
     }
 
